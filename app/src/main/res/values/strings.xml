@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Quote Droplet</string>
+    <string name="widget_name">Quote Droplet</string>
+    <string name="widget_description">A fresh quote on your home screen. Change its colors, font, category and how often it changes in the app.</string>
+    <string name="widget_preview_quote">More is lost by indecision than by wrong decision.</string>
+    <string name="widget_preview_author">— Cicero</string>
+    <string name="notification_channel_name">Daily quotes</string>
+    <string name="notification_channel_description">A quote at the time you pick in Settings → Quotes.</string>
+</resources>
