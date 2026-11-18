@@ -66,24 +66,31 @@ Regenerate with `python3 tools/make_icons.py <iOS icon>` and
 
 - App or game: App
 - Category: Education (same as the iOS app)
-- Tags: Quotes, Motivation, Self-improvement (whatever Play offers closest)
+- Tags: none (Play has no quotes or motivation tag)
 - Contact email: danielagapov1@gmail.com
 - Website: https://github.com/Daggerpov/Quote-Droplet-Android-Kotlin
 - Privacy policy: https://www.termsfeed.com/live/772e7c0e-385a-4995-9738-71a1c7d16181
 
-## App content answers
+## App content answers (as submitted 2026-11-18)
 
+- Privacy policy: the TermsFeed URL above
 - Ads: no ads
-- App access: everything works without an account or login
-- Target audience: 13 and over (13-15, 16-17, 18+); not designed for children
-- Content rating: Reference/Educational. Users can submit quotes, but every submission is reviewed
-  before anyone else sees it. No violence, sex, language, drugs, gambling or purchases.
-- News app: no. Government app: no. Financial features: none. Health: not a health app.
-- Data safety (all sent over HTTPS, nothing shared with third parties, nothing sold):
-  - App activity → App interactions: likes are counted on the server (optional, App functionality)
-  - App activity → Other user-generated content: submitted quotes and feedback messages (optional, App functionality)
-  - Personal info → Name: optional name/alias on quote submissions (optional, App functionality)
-  - Personal info → Email address: optional email on feedback (optional, Developer communications)
+- Sign in details: no part of the app is restricted
+- Advertising ID: not used
+- Government app: no. Financial features: none. Health: not a health app.
+- Target audience: 13-15, 16-17, 18 and over
+- Content rating (IARC, "All Other App Types"): everything "No" except "features content that isn't
+  part of the initial download" (quotes come from the server). Result: ESRB Everyone, PEGI 3,
+  USK all ages, ClassInd all ages, 3+ elsewhere. User-submitted quotes were not counted as users
+  interacting, because every submission is reviewed before anyone else sees it and the submitter
+  isn't shown.
+- Data safety: nothing shared with third parties, all data encrypted in transit, no accounts.
+  Each type below is collected, not processed ephemerally, optional, for App functionality:
+  - Personal info → Name: optional name/alias on quote submissions
+  - Personal info → Email address: optional email on feedback, so replies are possible
+  - App activity → App interactions: likes are counted on the server
+  - App activity → In-app search history: search terms are sent to the server (and appear in its
+    request logs)
+  - App activity → Other user-generated content: submitted quotes and feedback messages
   - Device or other IDs: a random ID created on the device so "My Submissions" can list your quotes
-    (required for submissions, App functionality)
-  - Deletion: users can ask for their submissions or feedback to be deleted by emailing the contact address
+  - The optional "can users request deletion" question was left unanswered.
