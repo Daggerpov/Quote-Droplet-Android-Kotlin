@@ -1,5 +1,10 @@
 package com.danielagapov.quotedroplet.ui.community
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.ui.unit.sp
+import com.danielagapov.quotedroplet.ui.components.ActionButton
+import com.danielagapov.quotedroplet.ui.components.QuoteSerif
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -100,7 +105,7 @@ fun SubmitQuoteButton(prefillAuthor: String? = null, modifier: Modifier = Modifi
     var open by rememberSaveable { mutableStateOf(false) }
     val result = vm.resultMessage
 
-    OutlinedActionButton("Submit a Quote", Icons.AutoMirrored.Outlined.Send, modifier = modifier, onClick = { open = true })
+    ActionButton("Submit a Quote", Icons.Outlined.EditNote, modifier = modifier, onClick = { open = true })
 
     LaunchedEffect(result) {
         if (result != null) open = false
@@ -144,15 +149,21 @@ private fun SubmitQuoteSheet(vm: SubmitQuoteViewModel, onDismiss: () -> Unit) {
             }
             Text(
                 "Submit a Quote",
-                style = MaterialTheme.typography.headlineMedium,
+                fontFamily = QuoteSerif,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = palette.accent,
+                color = palette.text,
             )
-            PaletteTextField(vm.text, { vm.text = it }, "Quote Text", minLines = 3)
-            PaletteTextField(vm.author, { vm.author = it }, "Quote Author")
-            PaletteTextField(vm.submitterName, vm::updateSubmitterName, "Your Name/Alias (Optional)")
+            Text(
+                "Don't worry about typos or a missing author or category: every submission is reviewed and can be filled in.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = palette.secondaryText,
+            )
+            PaletteTextField(vm.text, { vm.text = it }, "Quote text", minLines = 3)
+            PaletteTextField(vm.author, { vm.author = it }, "Author")
+            PaletteTextField(vm.submitterName, vm::updateSubmitterName, "Your name or alias (optional)")
             PickerRow(
-                label = "Quote Category",
+                label = "Category",
                 options = QuoteCategory.submittable,
                 selected = vm.category,
                 onSelect = { vm.category = it },
@@ -162,15 +173,16 @@ private fun SubmitQuoteSheet(vm: SubmitQuoteViewModel, onDismiss: () -> Unit) {
             Button(
                 onClick = vm::submit,
                 enabled = vm.text.isNotBlank() && !vm.submitting,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = palette.accent,
-                    contentColor = palette.background,
+                    contentColor = palette.onAccent,
                     disabledContainerColor = palette.accent.copy(alpha = 0.35f),
-                    disabledContentColor = palette.background.copy(alpha = 0.8f),
+                    disabledContentColor = palette.onAccent.copy(alpha = 0.7f),
                 ),
             ) {
-                if (vm.submitting) CircularProgressIndicator(Modifier.size(22.dp), color = palette.background, strokeWidth = 2.dp)
+                if (vm.submitting) CircularProgressIndicator(Modifier.size(22.dp), color = palette.onAccent, strokeWidth = 2.dp)
                 else Text("Submit", fontWeight = FontWeight.Bold)
             }
         }

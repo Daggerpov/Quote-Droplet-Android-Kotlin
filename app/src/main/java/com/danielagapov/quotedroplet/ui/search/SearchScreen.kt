@@ -1,5 +1,16 @@
 package com.danielagapov.quotedroplet.ui.search
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+import com.danielagapov.quotedroplet.ui.components.CategoryChips
+import com.danielagapov.quotedroplet.ui.components.HeaderBar
+import com.danielagapov.quotedroplet.ui.components.SectionLabel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -112,7 +123,7 @@ class SearchViewModel(private val container: AppContainer) : ViewModel() {
 }
 
 @Composable
-fun SearchScreen(onOpenAuthor: (String) -> Unit) {
+fun SearchScreen(onOpenInfo: () -> Unit, onOpenAuthor: (String) -> Unit) {
     val container = LocalAppContainer.current
     val vm: SearchViewModel = viewModel { SearchViewModel(container) }
     val query by vm.query.collectAsStateWithLifecycle()
@@ -122,71 +133,53 @@ fun SearchScreen(onOpenAuthor: (String) -> Unit) {
     val focus = LocalFocusManager.current
 
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
-            Text(
-                "Quote Search",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = palette.accent,
-                modifier = Modifier.padding(bottom = 10.dp),
-            )
-            TextField(
-                value = query,
-                onValueChange = vm::setQuery,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search by quote text or author name") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = palette.text) },
-                trailingIcon = if (query.isNotEmpty()) {
-                    {
-                        IconButton(onClick = vm::clear) {
-                            Icon(Icons.Filled.Cancel, contentDescription = "Clear search", tint = palette.accent)
-                        }
+        HeaderBar("Search", onOpenInfo, subtitle = "Find a quote")
+        TextField(
+            value = query,
+            onValueChange = vm::setQuery,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .border(1.dp, palette.hairline, RoundedCornerShape(16.dp)),
+            placeholder = { Text("Quote text or author") },
+            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = palette.secondaryText) },
+            trailingIcon = if (query.isNotEmpty()) {
+                {
+                    IconButton(onClick = vm::clear) {
+                        Icon(Icons.Filled.Cancel, contentDescription = "Clear search", tint = palette.secondaryText)
                     }
-                } else null,
-                singleLine = true,
-                shape = RoundedCornerShape(26.dp),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = palette.card,
-                    unfocusedContainerColor = palette.card,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = palette.text,
-                    unfocusedTextColor = palette.text,
-                    cursorColor = palette.accent,
-                    focusedPlaceholderColor = palette.text.copy(alpha = 0.6f),
-                    unfocusedPlaceholderColor = palette.text.copy(alpha = 0.6f),
-                ),
-            )
-        }
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            items(QuoteCategory.entries) { item ->
-                val selected = item == category
-                Text(
-                    text = item.displayName,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(if (selected) palette.text else palette.accent)
-                        .clickable { vm.setCategory(item) }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    color = palette.background,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                )
-            }
-        }
+                }
+            } else null,
+            singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = palette.card,
+                unfocusedContainerColor = palette.card,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                focusedTextColor = palette.text,
+                unfocusedTextColor = palette.text,
+                cursorColor = palette.accent,
+                focusedPlaceholderColor = palette.secondaryText,
+                unfocusedPlaceholderColor = palette.secondaryText,
+            ),
+        )
+        CategoryChips(
+            categories = QuoteCategory.entries,
+            selected = category,
+            onSelect = vm::setCategory,
+            modifier = Modifier.padding(vertical = 6.dp),
+        )
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             val results = state.results
             when {
-                query.isBlank() -> items(8) { index -> SkeletonQuoteCard(seed = index) }
+                query.isBlank() -> item { Suggestions(onPick = vm::setQuery) }
                 state.failed -> item { MessageText("Couldn't search right now. Check your connection and try again.") }
                 results == null -> item { LoadingIndicator() }
                 results.isEmpty() && !state.loading -> item { MessageText("No quotes match “${query.trim()}”.") }
@@ -195,5 +188,40 @@ fun SearchScreen(onOpenAuthor: (String) -> Unit) {
                 }
             }
         }
+    }
+}
+
+private val suggestions = listOf("Seneca", "courage", "Marcus Aurelius", "time", "kindness", "Maya Angelou")
+
+/** Shown before typing: a few searches to try. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Suggestions(onPick: (String) -> Unit) {
+    val palette = LocalPalette.current
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionLabel("Try searching for")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            suggestions.forEach { suggestion ->
+                Row(
+                    Modifier
+                        .clip(CircleShape)
+                        .background(palette.card)
+                        .border(1.dp, palette.hairline, CircleShape)
+                        .clickable { onPick(suggestion) }
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Search, contentDescription = null, tint = palette.accent, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(suggestion, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = palette.text)
+                }
+            }
+        }
+        Text(
+            "Search matches words in a quote and in its author's name. Pick a category above to narrow it down.",
+            style = MaterialTheme.typography.bodySmall,
+            color = palette.secondaryText,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+        )
     }
 }

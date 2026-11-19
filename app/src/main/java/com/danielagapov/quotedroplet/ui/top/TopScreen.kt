@@ -1,5 +1,11 @@
 package com.danielagapov.quotedroplet.ui.top
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import com.danielagapov.quotedroplet.ui.components.CategoryChips
+import com.danielagapov.quotedroplet.ui.components.PaletteCard
+import com.danielagapov.quotedroplet.ui.components.QuoteSerif
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -93,14 +99,12 @@ fun TopScreen(onOpenInfo: () -> Unit, onOpenAuthor: (String) -> Unit) {
     LaunchedEffect(Unit) { vm.load() }
 
     Column(Modifier.fillMaxSize()) {
-        HeaderBar(onOpenInfo)
-        PickerRow(
-            label = "Category:",
-            options = QuoteCategory.remote,
+        HeaderBar("Top Quotes", onOpenInfo, subtitle = "Most liked")
+        CategoryChips(
+            categories = QuoteCategory.remote,
             selected = category,
             onSelect = vm::setCategory,
-            optionText = { it.displayName },
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            modifier = Modifier.padding(vertical = 8.dp),
         )
         Box(Modifier.fillMaxSize()) {
             when {
@@ -108,8 +112,8 @@ fun TopScreen(onOpenInfo: () -> Unit, onOpenAuthor: (String) -> Unit) {
                 quotes.isEmpty() -> MessageText("No quotes available for this category", Modifier.padding(top = 40.dp))
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     itemsIndexed(quotes, key = { _, q -> q.id }) { index, quote ->
                         LeaderboardRow(rank = index + 1, quote = quote, onOpenAuthor = onOpenAuthor)
@@ -130,29 +134,34 @@ private fun LeaderboardRow(rank: Int, quote: Quote, onOpenAuthor: (String) -> Un
     val likeCounts by container.repository.likeCounts.collectAsStateWithLifecycle()
     val liked = quote.id in likedIds
 
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = palette.card, contentColor = palette.text),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    ) {
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, top = 14.dp, end = 6.dp, bottom = 4.dp)) {
-            Text(
-                "#$rank",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = palette.accent,
-                modifier = Modifier.width(48.dp),
-            )
+    val podium = rank <= 3
+    PaletteCard(padding = 16.dp) {
+        Row(Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(if (podium) palette.accent else palette.accent.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "$rank",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (podium) palette.onAccent else palette.accent,
+                )
+            }
+            Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(quote.text, style = MaterialTheme.typography.bodyLarge, color = palette.text, modifier = Modifier.padding(end = 10.dp))
+                Text(quote.text, fontFamily = QuoteSerif, fontSize = 17.sp, lineHeight = 24.sp, color = palette.text)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (isAuthorValid(quote.author)) {
                         Text(
                             "— ${quote.author.orEmpty().trim()}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontStyle = FontStyle.Italic,
-                            fontWeight = FontWeight.Medium,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
                             color = palette.accent,
+                            maxLines = 1,
                             modifier = Modifier.weight(1f).clickable { onOpenAuthor(quote.author.orEmpty()) },
                         )
                     } else {
@@ -162,24 +171,23 @@ private fun LeaderboardRow(rank: Int, quote: Quote, onOpenAuthor: (String) -> Un
                         copyQuote(context, quote)
                         container.recordInteraction()
                     }) {
-                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy", tint = palette.accent, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy", tint = palette.secondaryText, modifier = Modifier.size(18.dp))
                     }
                     IconButton(onClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         container.toggleLike(quote)
-                    }) {
+                    }, modifier = Modifier.size(36.dp)) {
                         Icon(
                             if (liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = if (liked) "Unlike" else "Like",
-                            tint = palette.accent,
-                            modifier = Modifier.size(22.dp),
+                            tint = if (liked) palette.accent else palette.secondaryText,
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                     Text(
                         "${likeCounts[quote.id] ?: quote.likes ?: 0}",
                         fontWeight = FontWeight.SemiBold,
-                        color = palette.accent,
-                        modifier = Modifier.padding(end = 10.dp),
+                        color = if (liked) palette.accent else palette.secondaryText,
                     )
                 }
             }

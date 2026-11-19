@@ -1,5 +1,13 @@
 package com.danielagapov.quotedroplet.ui.community
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.danielagapov.quotedroplet.ui.components.QuoteSerif
+import com.danielagapov.quotedroplet.ui.components.SectionLabel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -76,19 +84,36 @@ fun CommunityScreen(onOpenInfo: () -> Unit, onOpenSubmissions: () -> Unit) {
     LaunchedEffect(Unit) { vm.load() }
 
     Column(Modifier.fillMaxSize()) {
-        HeaderBar(onOpenInfo)
+        HeaderBar("Community", onOpenInfo, subtitle = "From readers")
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            SubmitCallout(onOpenSubmissions)
             NewestQuotes(newest, failed)
-            SubmitQuoteButton(modifier = Modifier.actionButtonWidth())
-            OutlinedActionButton("My Submissions", Icons.Outlined.Inbox, modifier = Modifier.actionButtonWidth(), onClick = onOpenSubmissions)
             Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun SubmitCallout(onOpenSubmissions: () -> Unit) {
+    val palette = LocalPalette.current
+    PaletteCard(padding = 20.dp) {
+        Text("Know a quote that belongs here?", fontFamily = QuoteSerif, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = palette.text)
+        Text(
+            "Submit it, and once it's approved it shows up for everyone, credited to you if you like.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = palette.secondaryText,
+            modifier = Modifier.padding(top = 6.dp, bottom = 14.dp),
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            SubmitQuoteButton(modifier = Modifier.fillMaxWidth())
+            OutlinedActionButton("My Submissions", Icons.Outlined.Inbox, modifier = Modifier.fillMaxWidth(), onClick = onOpenSubmissions)
         }
     }
 }
@@ -96,50 +121,47 @@ fun CommunityScreen(onOpenInfo: () -> Unit, onOpenSubmissions: () -> Unit) {
 @Composable
 private fun NewestQuotes(quotes: List<Quote>, failed: Boolean) {
     val palette = LocalPalette.current
-    PaletteCard {
-        PageTitle("Newest Quotes")
-        when {
-            quotes.isEmpty() && failed -> Text(
-                "Couldn't load the newest quotes. Check your connection and try again.",
-                style = MaterialTheme.typography.titleMedium,
-                color = palette.text,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            quotes.isEmpty() -> {
-                Text("Loading Quotes ...", style = MaterialTheme.typography.titleLarge, color = palette.text)
-                repeat(3) {
-                    Text("Quote Loading", style = MaterialTheme.typography.titleLarge, color = palette.text.copy(alpha = 0.5f), modifier = Modifier.padding(top = 10.dp))
-                    Text(
-                        "— Author Loading",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = palette.accent.copy(alpha = 0.6f),
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionLabel("Newest quotes")
+        PaletteCard {
+            when {
+                quotes.isEmpty() && failed -> Text(
+                    "Couldn't load the newest quotes. Check your connection and try again.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = palette.text,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                quotes.isEmpty() -> repeat(3) { index ->
+                    if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp), color = palette.hairline)
+                    Box(Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp)).background(palette.text.copy(alpha = 0.10f)))
+                    Spacer(Modifier.height(8.dp))
+                    Box(Modifier.fillMaxWidth(0.55f).height(12.dp).clip(RoundedCornerShape(6.dp)).background(palette.text.copy(alpha = 0.10f)))
                 }
-            }
-            else -> quotes.forEachIndexed { index, quote ->
-                if (index > 0) HorizontalDivider(Modifier.padding(vertical = 10.dp), color = palette.accent.copy(alpha = 0.3f))
-                Text(quote.text, style = MaterialTheme.typography.titleLarge, color = palette.text)
-                Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    quote.approvedDate?.let {
-                        Text(
-                            "Added ${formatDate(it)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = palette.text.copy(alpha = 0.8f),
-                            maxLines = 1,
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    if (isAuthorValid(quote.author)) {
-                        Text(
-                            "— ${quote.author.orEmpty().trim()}",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = palette.accent,
-                            textAlign = TextAlign.End,
-                            modifier = Modifier.padding(start = 12.dp),
-                        )
+                else -> quotes.forEachIndexed { index, quote ->
+                    if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp), color = palette.hairline)
+                    Text(quote.text, fontFamily = QuoteSerif, fontSize = 17.sp, lineHeight = 24.sp, color = palette.text)
+                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        quote.approvedDate?.let {
+                            Text(
+                                "Added ${formatDate(it)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = palette.secondaryText,
+                                maxLines = 1,
+                            )
+                        }
+                        Spacer(Modifier.weight(1f))
+                        if (isAuthorValid(quote.author)) {
+                            Text(
+                                "— ${quote.author.orEmpty().trim()}",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = palette.accent,
+                                textAlign = TextAlign.End,
+                                maxLines = 1,
+                                modifier = Modifier.padding(start = 12.dp),
+                            )
+                        }
                     }
                 }
             }

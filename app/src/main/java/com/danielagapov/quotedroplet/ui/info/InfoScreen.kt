@@ -1,5 +1,16 @@
 package com.danielagapov.quotedroplet.ui.info
 
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.unit.sp
+import com.danielagapov.quotedroplet.ui.components.PaletteCard
+import com.danielagapov.quotedroplet.ui.components.QuoteSerif
+import com.danielagapov.quotedroplet.ui.components.RowDivider
+import com.danielagapov.quotedroplet.ui.components.SectionLabel
+import com.danielagapov.quotedroplet.ui.components.SettingsRow
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -128,18 +139,33 @@ fun InfoScreen(onBack: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                Text(
-                    "App Info (Version ${BuildConfig.VERSION_NAME})",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = palette.accent,
-                    textAlign = TextAlign.Center,
-                )
-                OutlinedActionButton("Share Quote Droplet", Icons.Outlined.Share, modifier = Modifier.actionButtonWidth(), onClick = {
-                    shareText(context, "Check out this app, Quote Droplet.\n\n$PLAY_STORE_URL", "Share Quote Droplet")
-                })
-                OutlinedActionButton("Rate Quote Droplet", Icons.Outlined.StarBorder, modifier = Modifier.actionButtonWidth(), onClick = { openPlayListing(context) })
-                OutlinedActionButton("Send Feedback", Icons.Outlined.Feedback, modifier = Modifier.actionButtonWidth(), onClick = { showFeedback = true })
-                OutlinedActionButton("Also on iPhone & Mac", Icons.Outlined.Devices, modifier = Modifier.actionButtonWidth(), onClick = { showAppleNote = true })
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 4.dp)) {
+                    Box(
+                        Modifier
+                            .size(76.dp)
+                            .shadow(8.dp, RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(Brush.linearGradient(listOf(palette.accent, lerp(palette.accent, Color.Black, 0.18f)))),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.WaterDrop, contentDescription = null, tint = palette.onAccent, modifier = Modifier.size(38.dp))
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Text("Quote Droplet", fontFamily = QuoteSerif, fontWeight = FontWeight.Bold, fontSize = 28.sp, color = palette.text)
+                    Text("Version ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodyMedium, color = palette.secondaryText)
+                }
+                PaletteCard(padding = 0.dp) {
+                    SettingsRow(Icons.Outlined.Share, "Share Quote Droplet", onClick = {
+                        shareText(context, "Check out this app, Quote Droplet.\n\n$PLAY_STORE_URL", "Share Quote Droplet")
+                    }) { Chevron() }
+                    RowDivider()
+                    SettingsRow(Icons.Outlined.StarBorder, "Rate Quote Droplet", onClick = { openPlayListing(context) }) { Chevron() }
+                    RowDivider()
+                    SettingsRow(Icons.Outlined.Feedback, "Send Feedback", subtitle = "Bugs, ideas or quote corrections", onClick = { showFeedback = true }) { Chevron() }
+                    RowDivider()
+                    SettingsRow(Icons.Outlined.Devices, "Also on iPhone & Mac", onClick = { showAppleNote = true }) { Chevron() }
+                }
+                SectionLabel("Find me online")
                 AboutMeRow()
                 Text(
                     "Privacy Policy",
@@ -183,38 +209,46 @@ fun InfoScreen(onBack: () -> Unit) {
 }
 
 @Composable
+private fun Chevron() {
+    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = LocalPalette.current.secondaryText)
+}
+
+@Composable
 private fun AboutMeRow() {
     val context = LocalContext.current
     val palette = LocalPalette.current
     Row(
         Modifier
             .fillMaxWidth()
-            .shadow(6.dp, RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
+            .shadow(if (palette.isDark) 6.dp else 3.dp, RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(22.dp))
             .background(palette.card)
-            .padding(vertical = 12.dp),
+            .border(1.dp, palette.hairline, RoundedCornerShape(22.dp))
+            .padding(vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         LinkLogo(R.drawable.logo_instagram, "Instagram") { openUrl(context, "https://www.instagram.com/quote_droplet_app") }
         LinkLogo(R.drawable.logo_linkedin, "LinkedIn") { openUrl(context, "https://www.linkedin.com/in/danielagapov/") }
         LinkLogo(R.drawable.logo_github, "GitHub") { openUrl(context, "https://github.com/Daggerpov") }
-        LinkLogo(R.drawable.logo_gmail, "Email", width = 62) {
+        LinkLogo(R.drawable.logo_gmail, "Email", width = 42) {
             openUrl(context, "mailto:danielagapov1@gmail.com?subject=Quote%20Droplet%20Contact")
         }
     }
 }
 
 @Composable
-private fun LinkLogo(res: Int, description: String, width: Int = 46, onClick: () -> Unit) {
+private fun LinkLogo(res: Int, description: String, width: Int = 34, onClick: () -> Unit) {
     Box(
         Modifier
-            .clip(RoundedCornerShape(18.dp))
+            .size(54.dp)
+            .shadow(3.dp, RoundedCornerShape(15.dp))
+            .clip(RoundedCornerShape(15.dp))
             .background(Color.White)
-            .clickable(onClick = onClick)
-            .padding(8.dp),
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
-        Image(painterResource(res), contentDescription = description, modifier = Modifier.size(width = width.dp, height = 46.dp))
+        Image(painterResource(res), contentDescription = description, modifier = Modifier.size(width = width.dp, height = 34.dp))
     }
 }
 
@@ -243,7 +277,7 @@ private fun FeedbackSheet(vm: FeedbackViewModel, onDismiss: () -> Unit) {
                 Spacer(Modifier.size(6.dp))
                 Text("About Feedback", color = palette.accent)
             }
-            Text("Send Feedback", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = palette.accent)
+            Text("Send Feedback", fontFamily = QuoteSerif, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = palette.text)
             PickerRow(
                 label = "Feedback Type",
                 options = FeedbackType.entries,
@@ -260,15 +294,16 @@ private fun FeedbackSheet(vm: FeedbackViewModel, onDismiss: () -> Unit) {
                     onDismiss()
                 },
                 enabled = vm.message.isNotBlank() && !vm.sending,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = palette.accent,
-                    contentColor = palette.background,
+                    contentColor = palette.onAccent,
                     disabledContainerColor = palette.accent.copy(alpha = 0.35f),
-                    disabledContentColor = palette.background.copy(alpha = 0.8f),
+                    disabledContentColor = palette.onAccent.copy(alpha = 0.7f),
                 ),
             ) {
-                if (vm.sending) CircularProgressIndicator(Modifier.size(22.dp), color = palette.background, strokeWidth = 2.dp)
+                if (vm.sending) CircularProgressIndicator(Modifier.size(22.dp), color = palette.onAccent, strokeWidth = 2.dp)
                 else Text("Submit Feedback", fontWeight = FontWeight.Bold)
             }
         }

@@ -1,7 +1,7 @@
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
     <color name="splash_background">#FFFFFF</color>
-    <color name="widget_preview_background">#504136</color>
-    <color name="widget_preview_text">#EEC584</color>
-    <color name="widget_preview_accent">#F8F3E1</color>
+    <color name="widget_preview_background">#3A2C24</color>
+    <color name="widget_preview_text">#F7EEDD</color>
+    <color name="widget_preview_accent">#E8B66B</color>
 </resources>

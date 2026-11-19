@@ -31,6 +31,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -107,7 +108,7 @@ private fun HomeScreen(
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
-                NavigationBar(containerColor = palette.card) {
+                NavigationBar(containerColor = palette.backgroundBottom, tonalElevation = 0.dp) {
                     HomeTab.entries.forEach { item ->
                         NavigationBarItem(
                             selected = tab == item,
@@ -118,8 +119,8 @@ private fun HomeScreen(
                                 selectedIconColor = palette.accent,
                                 selectedTextColor = palette.accent,
                                 indicatorColor = palette.accent.copy(alpha = 0.18f),
-                                unselectedIconColor = palette.text.copy(alpha = 0.6f),
-                                unselectedTextColor = palette.text.copy(alpha = 0.6f),
+                                unselectedIconColor = palette.secondaryText,
+                                unselectedTextColor = palette.secondaryText,
                             ),
                         )
                     }
@@ -130,7 +131,7 @@ private fun HomeScreen(
                 tabStates.SaveableStateProvider(tab.name) {
                     when (tab) {
                         HomeTab.Droplets -> DropletsScreen(onOpenInfo = onOpenInfo, onOpenAuthor = onOpenAuthor)
-                        HomeTab.Search -> SearchScreen(onOpenAuthor = onOpenAuthor)
+                        HomeTab.Search -> SearchScreen(onOpenInfo = onOpenInfo, onOpenAuthor = onOpenAuthor)
                         HomeTab.Top -> TopScreen(onOpenInfo = onOpenInfo, onOpenAuthor = onOpenAuthor)
                         HomeTab.Community -> CommunityScreen(onOpenInfo = onOpenInfo, onOpenSubmissions = onOpenSubmissions)
                         HomeTab.Settings -> SettingsScreen(onOpenInfo = onOpenInfo)

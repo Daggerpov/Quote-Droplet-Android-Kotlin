@@ -1,5 +1,9 @@
 package com.danielagapov.quotedroplet.ui.community
 
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
+import com.danielagapov.quotedroplet.ui.components.QuoteSerif
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -92,10 +96,16 @@ fun SubmissionsScreen(onBack: () -> Unit) {
                 onRefresh = vm::load,
                 modifier = Modifier.fillMaxSize().padding(padding),
             ) {
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
+                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 20.dp)) {
                     item {
+                        PageTitle("My Submissions")
+                        Text(
+                            "Quotes you've submitted from this device, and whether they've been approved yet.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = palette.secondaryText,
+                            modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
+                        )
                         PaletteCard {
-                            PageTitle("My Submissions")
                             if (submissions.isEmpty()) {
                                 Text(
                                     text = when {
@@ -103,14 +113,14 @@ fun SubmissionsScreen(onBack: () -> Unit) {
                                         error != null -> error.orEmpty()
                                         else -> "You haven't submitted any quotes from this device yet. Quotes you submit will show up here along with their approval status."
                                     },
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.bodyLarge,
                                     color = palette.text,
-                                    textAlign = TextAlign.Center,
+                                    textAlign = TextAlign.Start,
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                                 )
                             }
                             submissions.forEachIndexed { index, submission ->
-                                if (index > 0) HorizontalDivider(Modifier.padding(vertical = 8.dp), color = palette.accent.copy(alpha = 0.4f))
+                                if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp), color = palette.hairline)
                                 SubmissionRow(submission)
                             }
                         }
@@ -125,21 +135,22 @@ fun SubmissionsScreen(onBack: () -> Unit) {
 private fun SubmissionRow(submission: Submission) {
     val palette = LocalPalette.current
     Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(submission.text, style = MaterialTheme.typography.titleLarge, color = palette.text)
+        Text(submission.text, fontFamily = QuoteSerif, fontSize = 17.sp, lineHeight = 24.sp, color = palette.text)
         if (isAuthorValid(submission.author)) {
             Text(
                 "— ${submission.author.orEmpty().trim()}",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
                 color = palette.accent,
                 textAlign = TextAlign.End,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
             )
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             StatusBadge(submission.submissionStatus)
             Spacer(Modifier.weight(1f))
             submission.submittedDate?.let {
-                Text(formatDate(it), style = MaterialTheme.typography.bodySmall, color = palette.text)
+                Text(formatDate(it), style = MaterialTheme.typography.bodySmall, color = palette.secondaryText)
             }
         }
     }
@@ -153,14 +164,17 @@ private fun StatusBadge(status: SubmissionStatus) {
         SubmissionStatus.Approved -> Icons.Outlined.CheckCircle
         SubmissionStatus.Rejected -> Icons.Outlined.Cancel
     }
+    val approved = status == SubmissionStatus.Approved
+    val content = if (approved) palette.onAccent else palette.accent
     Row(
         Modifier
-            .border(1.5.dp, palette.accent, CircleShape)
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .clip(CircleShape)
+            .background(if (approved) palette.accent else palette.accent.copy(alpha = 0.14f))
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = palette.accent, modifier = Modifier.size(16.dp))
-        Text(status.displayName, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = palette.accent)
+        Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(15.dp))
+        Text(status.displayName, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = content)
     }
 }

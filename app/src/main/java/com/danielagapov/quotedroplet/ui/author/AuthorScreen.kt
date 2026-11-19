@@ -1,5 +1,6 @@
 package com.danielagapov.quotedroplet.ui.author
 
+import com.danielagapov.quotedroplet.ui.components.PaletteCard
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,10 +70,10 @@ fun AuthorScreen(author: String, onBack: () -> Unit) {
         Scaffold(containerColor = Color.Transparent, topBar = { BackTopBar(onBack) }) { padding ->
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                item { PageTitle("Quotes by $author:") }
+                item { PageTitle(author, eyebrow = "Quotes by") }
                 val list = quotes
                 when {
                     failed -> item { MessageText("Couldn't load quotes by this author. Check your connection and try again.") }
@@ -80,9 +81,11 @@ fun AuthorScreen(author: String, onBack: () -> Unit) {
                     else -> items(list, key = { it.id }) { quote -> QuoteCard(quote) }
                 }
                 item {
-                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        MessageText("Missing a quote from this author?\nI'd greatly appreciate submissions:")
-                        Box(Modifier.padding(bottom = 16.dp)) { SubmitQuoteButton(prefillAuthor = author) }
+                    PaletteCard(padding = 20.dp) {
+                        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                            MessageText("Missing a quote from this author? I'd greatly appreciate submissions.", Modifier.padding(bottom = 4.dp))
+                            SubmitQuoteButton(prefillAuthor = author, modifier = Modifier.fillMaxWidth())
+                        }
                     }
                 }
             }
