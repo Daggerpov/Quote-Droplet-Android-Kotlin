@@ -2,6 +2,7 @@
 """Builds the Play Store feature graphic and the framed phone screenshots.
 
     python3 tools/make_store_assets.py <iOS 1024px icon> <folder of raw emulator screenshots>
+    python3 tools/make_store_assets.py - <folder>   # screenshots only, keep the feature graphic
 
 Raw screenshots are 1080x2340 PNGs taken with `adb exec-out screencap -p` (status bar in demo
 mode). Writes store/feature_graphic.png and store/screenshots/*.png (1080x1920).
@@ -21,15 +22,16 @@ BOLD = os.path.join(FONTS, "Roboto-Bold.ttf")
 MEDIUM = os.path.join(FONTS, "Roboto-Medium.ttf")
 SERIF_BOLD = os.path.join(FONTS, "NotoSerif-Bold.ttf")
 
-# (raw file, caption, background, caption color) in store order
+# (raw file, caption, background, caption color) in store order. Each screen was taken in a
+# different palette; the background and caption use that palette's colors.
 SCREENS = [
-    ("s5_widget.png", "A fresh quote on\nyour home screen", "#85C7F2", "#0C1618"),
-    ("s1_feed.png", "Scroll, save and\nshare quotes", "#504136", "#F8F3E1"),
-    ("s7_notification.png", "One quote a day, at\nthe time you choose", "#001427", "#EDD4B2"),
-    ("s4_appearance.png", "Your colors,\nyour font", "#001427", "#EDD4B2"),
-    ("s2_search.png", "Search by quote\nor author", "#504136", "#F8F3E1"),
-    ("s3_top.png", "The community's\nfavourite quotes", "#39474F", "#E7F3F1"),
-    ("s6_community.png", "Submit quotes\nof your own", "#EFF8E2", "#423E37"),
+    ("s5_widget.png", "A fresh quote on\nyour home screen", "#1E1D2A", "#F4F2F8"),  # Ember
+    ("s1_feed.png", "Scroll, save and\nshare quotes", "#3A2C24", "#F7EEDD"),  # Espresso
+    ("s4_appearance.png", "Eight palettes,\nor your own colors", "#3A2C24", "#F7EEDD"),  # Espresso
+    ("s2_search.png", "Search by quote\nor author", "#0C1A2E", "#F1E4CE"),  # Midnight
+    ("s3_top.png", "The community's\nfavourite quotes", "#DCEEF8", "#0F2536"),  # Sky
+    ("s6_community.png", "Submit quotes\nof your own", "#F6F0E6", "#3A2E27"),  # Linen
+    ("s7_notification.png", "One quote a day, at\nthe time you choose", "#1E1D2A", "#F4F2F8"),  # Ember
 ]
 
 
@@ -69,7 +71,7 @@ def framed_screenshot(raw_path, caption, bg_hex, text_hex, out_path):
     canvas = vertical_gradient((W, H), shade(bg, -0.08) if not light else bg, shade(bg, 0.18)).convert("RGBA")
     d = ImageDraw.Draw(canvas)
 
-    font = ImageFont.truetype(BOLD, 74)
+    font = ImageFont.truetype(SERIF_BOLD, 72)
     y = 90
     for line in caption.split("\n"):
         tw = d.textlength(line, font=font)
@@ -130,7 +132,8 @@ def feature_graphic(icon_path, out_path):
 def main():
     icon, raw_dir = sys.argv[1], sys.argv[2]
     os.makedirs(os.path.join(STORE, "screenshots"), exist_ok=True)
-    feature_graphic(icon, os.path.join(STORE, "feature_graphic.png"))
+    if icon != "-":
+        feature_graphic(icon, os.path.join(STORE, "feature_graphic.png"))
     for i, (raw, caption, bg, fg) in enumerate(SCREENS, start=1):
         path = os.path.join(raw_dir, raw)
         if not os.path.exists(path):
