@@ -9,7 +9,14 @@ import android.widget.Toast
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -79,12 +86,21 @@ fun QuoteCard(
     )
     val highlightColor = palette.accent.copy(alpha = 0.3f)
 
-    PaletteCard(modifier) {
+    PaletteCard(modifier, padding = 20.dp) {
+        Icon(
+            Icons.Filled.FormatQuote,
+            contentDescription = null,
+            tint = palette.accent.copy(alpha = 0.7f),
+            modifier = Modifier.size(26.dp).padding(bottom = 2.dp),
+        )
         Text(
             text = highlighted(quote.text, highlight, highlightColor),
-            style = MaterialTheme.typography.titleLarge.copy(lineHeight = 28.sp),
+            fontFamily = QuoteSerif,
+            fontSize = 20.sp,
+            lineHeight = 29.sp,
             fontWeight = FontWeight.Normal,
             color = palette.text,
+            modifier = Modifier.padding(top = 6.dp),
         )
         if (isAuthorValid(quote.author)) {
             val author = quote.author.orEmpty()
@@ -92,20 +108,38 @@ fun QuoteCard(
                 append("— ")
                 append(highlighted(author.trim(), highlight, highlightColor))
             }
-            Text(
-                text = authorText,
-                modifier = Modifier
+            Row(
+                Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .then(if (onAuthorClick != null) Modifier.clickable { onAuthorClick(author) } else Modifier),
-                style = MaterialTheme.typography.bodyLarge,
-                color = palette.accent,
-                textAlign = TextAlign.End,
-                textDecoration = if (onAuthorClick != null) TextDecoration.Underline else null,
-            )
+                    .padding(top = 10.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    Modifier.then(if (onAuthorClick != null) Modifier.clickable { onAuthorClick(author) } else Modifier),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = authorText,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.accent,
+                        maxLines = 1,
+                    )
+                    if (onAuthorClick != null) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = palette.accent.copy(alpha = 0.8f),
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
         }
+        Box(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp).height(1.dp).background(palette.hairline))
         Row(
-            Modifier.fillMaxWidth().padding(top = 2.dp),
+            Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = {
@@ -115,28 +149,34 @@ fun QuoteCard(
                 Icon(
                     imageVector = if (liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = if (liked) "Unlike" else "Like",
-                    tint = palette.accent,
-                    modifier = Modifier.size(28.dp).scale(heartScale),
+                    tint = if (liked) palette.accent else palette.secondaryText,
+                    modifier = Modifier.size(22.dp).scale(heartScale),
                 )
             }
-            Text("$likes", color = palette.accent, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.width(6.dp))
+            Text(
+                "$likes",
+                color = if (liked) palette.accent else palette.secondaryText,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.offset(x = (-6).dp),
+            )
             IconButton(onClick = { container.toggleBookmark(quote) }) {
                 Icon(
                     imageVector = if (bookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
                     contentDescription = if (bookmarked) "Remove from saved" else "Save",
-                    tint = palette.accent,
-                    modifier = Modifier.size(28.dp),
+                    tint = if (bookmarked) palette.accent else palette.secondaryText,
+                    modifier = Modifier.size(22.dp),
                 )
             }
             IconButton(onClick = {
                 copyQuote(context, quote)
                 container.recordInteraction()
             }) {
-                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy", tint = palette.accent, modifier = Modifier.size(26.dp))
+                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy", tint = palette.secondaryText, modifier = Modifier.size(20.dp))
             }
+            Spacer(Modifier.weight(1f))
             IconButton(onClick = { shareQuote(context, quote) }) {
-                Icon(Icons.Outlined.Share, contentDescription = "Share", tint = palette.accent, modifier = Modifier.size(26.dp))
+                Icon(Icons.Outlined.Share, contentDescription = "Share", tint = palette.secondaryText, modifier = Modifier.size(20.dp))
             }
         }
     }

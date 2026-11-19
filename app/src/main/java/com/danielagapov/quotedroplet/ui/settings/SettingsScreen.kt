@@ -1,5 +1,17 @@
 package com.danielagapov.quotedroplet.ui.settings
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.TextFields
+import com.danielagapov.quotedroplet.ui.components.ActionButton
+import com.danielagapov.quotedroplet.ui.components.IconTile
+import com.danielagapov.quotedroplet.ui.components.QuoteSerif
+import com.danielagapov.quotedroplet.ui.components.SectionLabel
+import com.danielagapov.quotedroplet.ui.theme.PALETTE_DISPLAY_ORDER
+import com.danielagapov.quotedroplet.ui.theme.PALETTE_NAMES
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -113,12 +125,12 @@ fun SettingsScreen(onOpenInfo: () -> Unit) {
     val pagerState = rememberPagerState { 2 }
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize()) {
-        HeaderBar(onOpenInfo)
+        HeaderBar("Settings", onOpenInfo, subtitle = "Widget & app")
         PaletteSegmentedControl(
             labels = listOf("Appearance", "Quotes"),
             selectedIndex = pagerState.currentPage,
             onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
             if (page == 0) AppearancePage() else QuotesPage()
@@ -142,10 +154,11 @@ private fun AppearancePage() {
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        SectionLabel("Widget preview")
         WidgetPreview(palette, fontIndex)
         TextButton(onClick = { pinUnsupported = !WidgetSync.requestPin(context) }) {
             Icon(Icons.Outlined.Widgets, contentDescription = null, tint = palette.accent)
@@ -161,7 +174,7 @@ private fun AppearancePage() {
             )
         }
         PickerRow(
-            label = "Widget Font:",
+            label = "Widget font",
             options = WidgetFonts.all.indices.toList(),
             selected = fontIndex,
             onSelect = {
@@ -170,42 +183,71 @@ private fun AppearancePage() {
             },
             optionText = { WidgetFonts[it].name },
             optionFont = { WidgetFonts[it].composeFamily() },
+            icon = Icons.Filled.TextFields,
         )
 
-        SectionLabel("Sample Colors:")
-        // Same layout as iOS: four presets per row, the custom palette has its own row
-        val rows = listOf(listOf(0, 1, 2, 4), listOf(5, 6, 7, 8))
-        rows.forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                row.forEach { index ->
-                    PaletteSwatch(
-                        colors = presetPalettes[index].colors,
-                        selected = paletteIndex == index,
-                        onClick = {
-                            settings.setPaletteIndex(index)
-                            WidgetSync.onAppearanceChanged(context)
-                        },
-                    )
+        SectionLabel("Color palette")
+        PaletteCard(padding = 14.dp) {
+            // Dark presets on the first row, light ones on the second; the custom palette has its own card
+            PALETTE_DISPLAY_ORDER.chunked(4).forEachIndexed { rowIndex, row ->
+                if (rowIndex > 0) Spacer(Modifier.height(14.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    row.forEach { index ->
+                        PaletteSwatch(
+                            swatch = presetPalettes[index],
+                            name = PALETTE_NAMES[index],
+                            selected = paletteIndex == index,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                settings.setPaletteIndex(index)
+                                WidgetSync.onAppearanceChanged(context)
+                            },
+                        )
+                    }
                 }
             }
         }
 
-        SectionLabel("Custom Colors:")
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            customHex.forEachIndexed { slot, hex ->
+        SectionLabel("Custom palette")
+        val customPalette = Palette(colorFromHex(customHex[0]), colorFromHex(customHex[1]), colorFromHex(customHex[2]))
+        PaletteCard(padding = 14.dp) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 PaletteSwatch(
-                    colors = listOf(colorFromHex(hex)),
+                    swatch = customPalette,
+                    name = "Custom",
                     selected = paletteIndex == CUSTOM_PALETTE_INDEX,
-                    onClick = { editingSlot = slot },
-                    label = listOf("Background", "Quote", "Author")[slot],
+                    modifier = Modifier.width(76.dp),
+                    onClick = {
+                        settings.setPaletteIndex(CUSTOM_PALETTE_INDEX)
+                        WidgetSync.onAppearanceChanged(context)
+                    },
                 )
+                Spacer(Modifier.width(12.dp))
+                customHex.forEachIndexed { slot, hex ->
+                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(colorFromHex(hex))
+                                .border(2.dp, palette.hairline, CircleShape)
+                                .clickable { editingSlot = slot },
+                        )
+                        Text(
+                            listOf("Background", "Text", "Accent")[slot],
+                            style = MaterialTheme.typography.labelSmall,
+                            color = palette.secondaryText,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
+                }
             }
         }
         Text(
-            "Tap a custom color to change it. Your colors theme the app and the widget.",
+            "Tap a color to change it. Your colors theme the app and the widget.",
             style = MaterialTheme.typography.bodySmall,
-            color = palette.text.copy(alpha = 0.8f),
-            textAlign = TextAlign.Center,
+            color = palette.secondaryText,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         )
         Spacer(Modifier.height(8.dp))
     }
@@ -213,7 +255,7 @@ private fun AppearancePage() {
     editingSlot?.let { slot ->
         ColorPickerDialog(
             initial = colorFromHex(customHex[slot]),
-            title = "Custom ${listOf("background", "quote", "author").getOrElse(slot) { "" }} color",
+            title = "Custom ${listOf("background", "text", "accent").getOrElse(slot) { "" }} color",
             onDismiss = { editingSlot = null },
             onPick = { hex ->
                 settings.setCustomColor(slot, hex)
@@ -225,74 +267,79 @@ private fun AppearancePage() {
 }
 
 @Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-        color = LocalPalette.current.text,
-        modifier = Modifier.padding(top = 4.dp),
-    )
-}
-
-@Composable
 private fun WidgetPreview(palette: Palette, fontIndex: Int) {
     val family = WidgetFonts[fontIndex].composeFamily()
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(24.dp)
     Box(
         Modifier
-            .size(170.dp)
-            .shadow(10.dp, shape)
+            .fillMaxWidth()
+            .height(158.dp)
+            .shadow(if (palette.isDark) 12.dp else 6.dp, shape)
             .clip(shape)
             .background(palette.background)
-            // Outline keeps the preview visible when it matches the screen color (dark palettes)
-            .border(1.dp, palette.text.copy(alpha = 0.18f), shape)
-            .padding(14.dp),
+            // Outline keeps the preview visible when it matches the screen color
+            .border(1.dp, palette.hairline, shape)
+            .padding(horizontal = 26.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 "More is lost by indecision than by wrong decision.",
                 fontFamily = family,
-                fontSize = 16.sp,
-                lineHeight = 21.sp,
+                fontSize = 19.sp,
+                lineHeight = 25.sp,
                 color = palette.text,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(8.dp))
-            Text("— Cicero", fontFamily = family, fontSize = 14.sp, color = palette.accent, maxLines = 1)
+            Spacer(Modifier.height(10.dp))
+            Text("— Cicero", fontFamily = family, fontSize = 15.sp, color = palette.accent, maxLines = 1)
         }
     }
 }
 
+/** A palette tile: its background with "Aa" in its text color and an accent bar, plus its name. */
 @Composable
 private fun PaletteSwatch(
-    colors: List<Color>,
+    swatch: Palette,
+    name: String,
     selected: Boolean,
     onClick: () -> Unit,
-    label: String? = null,
+    modifier: Modifier = Modifier,
 ) {
     val palette = LocalPalette.current
-    val shape = RoundedCornerShape(12.dp)
-    val brush = if (colors.size > 1) Brush.linearGradient(colors) else Brush.linearGradient(listOf(colors[0], colors[0]))
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    val shape = RoundedCornerShape(16.dp)
+    Column(modifier.clickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
-                .size(64.dp)
+                .fillMaxWidth()
+                .height(72.dp)
                 .clip(shape)
-                .background(brush)
-                .border(if (selected) 3.dp else 1.dp, if (selected) palette.accent else palette.text.copy(alpha = 0.25f), shape)
-                .clickable(onClick = onClick),
-            contentAlignment = Alignment.Center,
+                .background(swatch.background)
+                .border(if (selected) 3.dp else 1.dp, if (selected) palette.accent else palette.hairline, shape)
+                .padding(10.dp),
         ) {
-            if (selected && label == null) {
-                val tint = if (colors[0].luminance() < 0.5f) Color.White else Color.Black
-                Icon(Icons.Filled.Check, contentDescription = "Selected", tint = tint)
+            Column {
+                Text("Aa", fontFamily = QuoteSerif, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, color = swatch.text)
+                Spacer(Modifier.height(4.dp))
+                Box(Modifier.width(24.dp).height(4.dp).clip(CircleShape).background(swatch.accent))
+            }
+            if (selected) {
+                Box(
+                    Modifier.align(Alignment.BottomEnd).size(20.dp).clip(CircleShape).background(palette.accent),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.Check, contentDescription = "Selected", tint = palette.onAccent, modifier = Modifier.size(14.dp))
+                }
             }
         }
-        if (label != null) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = palette.text, modifier = Modifier.padding(top = 4.dp))
-        }
+        Text(
+            name,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = if (selected) palette.text else palette.secondaryText,
+            maxLines = 1,
+            modifier = Modifier.padding(top = 6.dp),
+        )
     }
 }
 
@@ -324,12 +371,14 @@ private fun QuotesPage() {
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        SectionLabel("Widget")
         PickerRow(
-            label = "Quote Category:",
+            icon = Icons.Filled.GridView,
+            label = "Quote category",
             options = QuoteCategory.entries,
             selected = category,
             onSelect = {
@@ -339,7 +388,8 @@ private fun QuotesPage() {
             optionText = { c -> counts[c]?.let { "${c.displayName} ($it)" } ?: c.displayName },
         )
         PickerRow(
-            label = "Reload Widget:",
+            icon = Icons.Filled.Autorenew,
+            label = "New quote",
             options = QuoteFrequency.entries,
             selected = frequency,
             onSelect = {
@@ -349,18 +399,21 @@ private fun QuotesPage() {
             optionText = { it.displayName },
         )
         Text(
-            "The category picks quotes for your widget and daily notifications.",
+            "The category also picks which quotes your notifications show.",
             style = MaterialTheme.typography.bodySmall,
-            color = palette.text.copy(alpha = 0.8f),
-            textAlign = TextAlign.Center,
+            color = palette.secondaryText,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         )
 
+        SectionLabel("Notifications")
         PaletteCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(Icons.Filled.NotificationsActive)
+                Spacer(Modifier.width(14.dp))
                 Text(
                     "Daily quote notification",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
                     color = palette.text,
                     modifier = Modifier.weight(1f),
                 )
@@ -371,7 +424,7 @@ private fun QuotesPage() {
                         QuoteNotifications.schedule(context, settings)
                     },
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = palette.background,
+                        checkedThumbColor = palette.onAccent,
                         checkedTrackColor = palette.accent,
                         uncheckedThumbColor = palette.text.copy(alpha = 0.7f),
                         uncheckedTrackColor = palette.card,
@@ -382,9 +435,9 @@ private fun QuotesPage() {
             if (notifications.enabled) {
                 Text(
                     "You currently have daily notifications ${if (notifications.customized) "" else "automatically "}scheduled for ${formatTime(context, notifications.hour, notifications.minute)}.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = palette.accent,
-                    modifier = Modifier.padding(top = 6.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = palette.secondaryText,
+                    modifier = Modifier.padding(top = 10.dp),
                 )
             }
             if (!notificationsAllowed) {
@@ -412,10 +465,12 @@ private fun QuotesPage() {
             }
         }
 
-        OutlinedActionButton(
-            text = "Schedule Notifications",
+        ActionButton(
+            text = "Change notification time",
             icon = Icons.Outlined.Alarm,
             onClick = { showTimePicker = true },
+            modifier = Modifier.fillMaxWidth(),
+            primary = false,
         )
     }
 

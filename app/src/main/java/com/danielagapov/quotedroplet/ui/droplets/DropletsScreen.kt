@@ -14,6 +14,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,6 +38,7 @@ import com.danielagapov.quotedroplet.AppContainer
 import com.danielagapov.quotedroplet.data.Quote
 import com.danielagapov.quotedroplet.data.QuoteCategory
 import com.danielagapov.quotedroplet.ui.LocalAppContainer
+import com.danielagapov.quotedroplet.ui.components.EmptyState
 import com.danielagapov.quotedroplet.ui.components.HeaderBar
 import com.danielagapov.quotedroplet.ui.components.LoadingIndicator
 import com.danielagapov.quotedroplet.ui.components.MessageText
@@ -45,6 +47,8 @@ import com.danielagapov.quotedroplet.ui.components.PageTitle
 import com.danielagapov.quotedroplet.ui.components.PaletteSegmentedControl
 import com.danielagapov.quotedroplet.ui.components.QuoteCard
 import com.danielagapov.quotedroplet.ui.theme.LocalPalette
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,13 +124,14 @@ fun DropletsScreen(onOpenInfo: () -> Unit, onOpenAuthor: (String) -> Unit) {
         }
     }
 
+    val today = remember { LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d")) }
     Column(Modifier.fillMaxSize()) {
-        HeaderBar(onOpenInfo)
+        HeaderBar("Droplets", onOpenInfo, subtitle = today)
         PaletteSegmentedControl(
             labels = listOf("Feed", "Saved", "Recent"),
             selectedIndex = pagerState.currentPage,
             onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
         // Swipe between Feed, Saved and Recent, like the iOS swipe gesture
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
@@ -150,14 +155,13 @@ private fun FeedPage(vm: DropletsViewModel, onOpenAuthor: (String) -> Unit) {
     PullToRefreshBox(isRefreshing = refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item { PageTitle("Quotes Feed") }
             if (quotes.isEmpty()) {
                 item {
                     when {
-                        loading || refreshing -> MessageText("Loading Quotes Feed...")
+                        loading || refreshing -> LoadingIndicator(Modifier.padding(top = 60.dp))
                         stalled -> MessageText("Couldn't load quotes. Check your connection, then pull down to try again.")
                     }
                 }
@@ -195,17 +199,17 @@ private fun SavedPage(vm: DropletsViewModel, onOpenAuthor: (String) -> Unit) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        item { PageTitle("Saved Quotes") }
         if (quotes.isEmpty()) {
             item {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    MessageText("You have no saved quotes.\n\nPlease save some from the Quotes Feed by pressing this:")
-                    Icon(Icons.Filled.BookmarkBorder, contentDescription = null, tint = palette.accent, modifier = Modifier.size(34.dp))
-                }
+                EmptyState(
+                    Icons.Filled.BookmarkBorder,
+                    "Nothing saved yet",
+                    "Tap the bookmark on any quote in your feed to keep it here.",
+                )
             }
         }
         items(quotes, key = { it.id }) { quote ->
@@ -223,14 +227,15 @@ private fun RecentPage(vm: DropletsViewModel, onOpenAuthor: (String) -> Unit) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { PageTitle("Recent Quotes") }
         if (recents.isEmpty()) {
             item {
-                MessageText(
-                    "You have no recent quotes.\n\nTurn on notifications or add the Quote Droplet widget to your home screen to see them listed here."
+                EmptyState(
+                    Icons.Filled.History,
+                    "No recent quotes yet",
+                    "Quotes from your notifications and your home screen widget will be listed here.",
                 )
             }
         } else {
@@ -238,8 +243,8 @@ private fun RecentPage(vm: DropletsViewModel, onOpenAuthor: (String) -> Unit) {
                 Text(
                     "Your most recent quotes from notifications and your widget.",
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = palette.accent,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = palette.secondaryText,
                     textAlign = TextAlign.Center,
                 )
             }

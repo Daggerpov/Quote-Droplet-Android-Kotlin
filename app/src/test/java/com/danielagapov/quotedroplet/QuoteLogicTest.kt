@@ -98,7 +98,7 @@ class QuoteLogicTest {
 
     @Test
     fun palettesRoundTripThroughHex() {
-        assertEquals("#504136", presetPalettes[0].background.toHex())
+        assertEquals("#3A2C24", presetPalettes[0].background.toHex())
         assertEquals("#1C7C54", colorFromHex("1C7C54").toHex())
         assertEquals("#ABCDEF", colorFromHex("#abcdef").toHex())
         val custom = listOf(colorFromHex("#111111"), colorFromHex("#222222"), colorFromHex("#333333"))
