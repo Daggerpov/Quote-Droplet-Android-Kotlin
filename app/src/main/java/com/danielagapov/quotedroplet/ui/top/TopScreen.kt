@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -158,7 +159,7 @@ private fun LeaderboardRow(rank: Int, quote: Quote, onOpenAuthor: (String) -> Un
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (isAuthorValid(quote.author)) {
                         Box(Modifier.weight(1f)) {
-                            AuthorLink(quote.author.orEmpty(), onOpenAuthor)
+                            AuthorLink(quote.author.orEmpty(), onOpenAuthor, textAlign = TextAlign.Start)
                         }
                     } else {
                         Spacer(Modifier.weight(1f))

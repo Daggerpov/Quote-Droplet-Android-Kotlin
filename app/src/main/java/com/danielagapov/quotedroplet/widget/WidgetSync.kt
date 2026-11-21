@@ -33,6 +33,11 @@ object WidgetSync {
         text = "No saved quotes yet. Save quotes in the app to see them here.",
         author = "Quote Droplet",
     )
+    private val NO_CUSTOM_QUOTES = Quote(
+        id = -3,
+        text = "No custom quotes yet. Add your own in the app's Droplets tab, under Custom.",
+        author = "Quote Droplet",
+    )
 
     private const val PERIODIC_WORK = "quote-widget-periodic"
     private const val ONE_TIME_WORK = "quote-widget-now"
@@ -87,19 +92,22 @@ object WidgetSync {
         context.appContainer.appScope.launch { if (hasWidgets(context)) schedulePeriodic(context, replace = true) }
     }
 
-    /** Puts a new quote on the widget (and in Droplets → Recent). */
+    /** Puts a new quote on the widget. */
     suspend fun loadNewQuote(context: Context): Quote {
         val container = context.appContainer
         val category = container.settings.quoteCategory.value
         val quote = if (category == QuoteCategory.Saved) {
             container.localQuotes.bookmarks.value.randomOrNull() ?: NO_SAVED_QUOTES
+        } else if (category == QuoteCategory.Custom) {
+            val custom = container.localQuotes.customs.value
+            // Prefer short ones, like the backend's maxLength for the other categories
+            (custom.filter { it.text.length <= MAX_LENGTH }.ifEmpty { custom }).randomOrNull() ?: NO_CUSTOM_QUOTES
         } else {
             withTimeoutOrNull(12_000) { container.repository.randomQuote(category, MAX_LENGTH).getOrNull() }
                 ?: container.bundledQuotes.random(category, MAX_LENGTH)
                 ?: FALLBACK_QUOTE
         }
         container.widgetQuote.set(quote)
-        if (quote.id > 0) container.localQuotes.addRecent(quote)
         return quote
     }
 

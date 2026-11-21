@@ -66,6 +66,18 @@ class QuoteLogicTest {
         assertEquals(QuoteCategory.All, QuoteCategory.fromKey("nonsense"))
         assertEquals(QuoteCategory.Love, QuoteCategory.fromKey("Love"))
         assertFalse(QuoteCategory.remote.contains(QuoteCategory.Saved))
+        assertFalse(QuoteCategory.remote.contains(QuoteCategory.Custom))
+        assertFalse(QuoteCategory.submittable.contains(QuoteCategory.Custom))
+        assertEquals(QuoteCategory.Custom, QuoteCategory.fromKey("Custom"))
+    }
+
+    @Test
+    fun customQuotesAreLocalOnly() {
+        val quote = Quote.newCustom("Be kind.", "Mom", now = 1_763_600_000_123)
+        assertTrue(quote.id < 0)
+        assertTrue(quote.isCustom)
+        assertFalse(Quote(id = 5, text = "x", classification = "custom").isCustom)
+        assertFalse(Quote(id = -2, text = "No saved quotes yet.").isCustom)
     }
 
     @Test

@@ -93,7 +93,8 @@ object QuoteNotifications {
             context,
             0,
             Intent(context, MainActivity::class.java)
-                .putExtra(MainActivity.EXTRA_OPEN_RECENT, quote.id > 0)
+                // Custom quotes open Droplets → Custom; others open the feed
+                .putExtra(MainActivity.EXTRA_DROPLETS_PAGE, if (quote.isCustom) 2 else 0)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -111,8 +112,6 @@ object QuoteNotifications {
         } catch (e: SecurityException) {
             return
         }
-        // Shown quotes appear in Droplets → Recent
-        if (quote.id > 0) context.appContainer.localQuotes.addRecent(quote)
     }
 
     private suspend fun pickQuote(context: Context): Pair<String, Quote> {
@@ -124,6 +123,15 @@ object QuoteNotifications {
             else "Quote Droplet: No Saved Quotes Added" to Quote(
                 id = -1,
                 text = "Please add a quote to saved by tapping the save button under a quote in the app's \"Droplets\" tab",
+            )
+        }
+        if (category == QuoteCategory.Custom) {
+            val custom = container.localQuotes.customs.value
+            val pick = (custom.filter { it.text.length <= NOTIFICATION_MAX_LENGTH }.ifEmpty { custom }).randomOrNull()
+            return if (pick != null) "Quote Droplet: Your Quotes" to pick
+            else "Quote Droplet: No Custom Quotes Added" to Quote(
+                id = -1,
+                text = "Add your own quotes in the app's \"Droplets\" tab, under Custom",
             )
         }
         val title = if (category == QuoteCategory.All) "Quote Droplet" else "Quote Droplet: ${category.displayName}"

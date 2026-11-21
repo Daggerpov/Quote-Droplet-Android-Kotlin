@@ -5,6 +5,7 @@ import com.danielagapov.quotedroplet.data.BundledQuotes
 import com.danielagapov.quotedroplet.data.LocalQuotesStore
 import com.danielagapov.quotedroplet.data.Quote
 import com.danielagapov.quotedroplet.data.QuoteApi
+import com.danielagapov.quotedroplet.data.QuoteCategory
 import com.danielagapov.quotedroplet.data.QuoteRepository
 import com.danielagapov.quotedroplet.data.SettingsStore
 import com.danielagapov.quotedroplet.data.SubmitterId
@@ -64,8 +65,8 @@ class AppContainer(private val context: Context) {
     /** Emits once the user has had enough interactions to be asked for a Play review. */
     val reviewRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-    /** Set when the app is opened from a notification, so Droplets shows its Recent page. */
-    val openRecentRequests = MutableStateFlow(false)
+    /** Set when the app is opened from a notification: the Droplets page to show (0 Feed, 1 Saved, 2 Custom). */
+    val openDropletsPageRequests = MutableStateFlow<Int?>(null)
 
     init {
         // Keep the widget's heart in sync with likes made in the app
@@ -80,6 +81,31 @@ class AppContainer(private val context: Context) {
     fun toggleBookmark(quote: Quote) {
         localQuotes.setBookmarked(quote, !localQuotes.isBookmarked(quote.id))
         recordInteraction()
+    }
+
+    /** Adds a custom quote (when [editing] is null) or saves changes to one. Returns false for empty text. */
+    fun saveCustomQuote(text: String, author: String, editing: Quote? = null): Boolean {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return false
+        val authorValue = author.trim().ifEmpty { null }
+        var quote = editing?.copy(text = trimmed, author = authorValue) ?: Quote.newCustom(trimmed, authorValue)
+        if (editing == null) {
+            // Two quotes added in the same millisecond would share an ID
+            while (localQuotes.customs.value.any { it.id == quote.id }) quote = quote.copy(id = quote.id - 1)
+        }
+        localQuotes.saveCustom(quote)
+        onCustomQuotesChanged()
+        return true
+    }
+
+    fun deleteCustomQuote(quote: Quote) {
+        localQuotes.deleteCustom(quote)
+        onCustomQuotesChanged()
+    }
+
+    // The widget draws from custom quotes when that category is picked, so give it a fresh one
+    private fun onCustomQuotesChanged() {
+        if (settings.quoteCategory.value == QuoteCategory.Custom) WidgetSync.onCategoryChanged(context)
     }
 
     fun recordInteraction() {
