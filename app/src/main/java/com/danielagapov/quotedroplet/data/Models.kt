@@ -17,6 +17,17 @@ data class Quote(
     @SerialName("approved_at") val approvedAt: String? = null,
 ) {
     val approvedDate: Instant? get() = parseApiDate(approvedAt)
+
+    /** A quote the user wrote in Droplets → Custom. It only exists on this device, so it can't be liked or saved. */
+    val isCustom: Boolean get() = id < 0 && classification == CUSTOM_CLASSIFICATION
+
+    companion object {
+        const val CUSTOM_CLASSIFICATION = "custom"
+
+        /** Custom quotes get negative IDs so they never collide with the backend's quote IDs. */
+        fun newCustom(text: String, author: String?, now: Long = System.currentTimeMillis()): Quote =
+            Quote(id = -(now % Int.MAX_VALUE).toInt().coerceAtLeast(1), text = text, author = author, classification = CUSTOM_CLASSIFICATION)
+    }
 }
 
 /** A quote the user submitted, as returned by GET /quotes/submissions. */
@@ -70,21 +81,25 @@ enum class QuoteCategory(val displayName: String) {
     Inspiration("Inspiration"),
     Upliftment("Upliftment"),
     Love("Love"),
-    Saved("Saved");
+    Saved("Saved"),
+    Custom("Custom");
 
     val apiName: String get() = displayName.lowercase()
 
     /** The value for the backend's classification/category filters (null = no filter). */
     val apiFilter: String? get() = if (this == All) null else apiName
 
+    /** Saved and Custom quotes live on the device; the backend doesn't know these categories. */
+    val isOnDevice: Boolean get() = this == Saved || this == Custom
+
     companion object {
         fun fromKey(key: String?): QuoteCategory = entries.firstOrNull { it.name == key } ?: All
 
-        /** Categories the backend knows about (Saved only exists on the device). */
-        val remote: List<QuoteCategory> get() = entries.filter { it != Saved }
+        /** Categories the backend knows about. */
+        val remote: List<QuoteCategory> get() = entries.filter { !it.isOnDevice }
 
         /** Choices when submitting a quote: All is shown as "Unsure". */
-        val submittable: List<QuoteCategory> get() = entries.filter { it != Saved }
+        val submittable: List<QuoteCategory> get() = remote
     }
 }
 

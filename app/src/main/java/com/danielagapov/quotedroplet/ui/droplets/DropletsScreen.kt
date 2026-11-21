@@ -14,7 +14,33 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.FormatQuote
+import androidx.compose.material.icons.outlined.Widgets
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.danielagapov.quotedroplet.ui.components.ActionButton
+import com.danielagapov.quotedroplet.ui.components.PaletteTextField
+import com.danielagapov.quotedroplet.ui.components.QuoteSerif
+import com.danielagapov.quotedroplet.widget.WidgetSync
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -114,13 +140,13 @@ fun DropletsScreen(onOpenInfo: () -> Unit, onOpenAuthor: (String) -> Unit) {
     val vm: DropletsViewModel = viewModel { DropletsViewModel(container) }
     val pagerState = rememberPagerState { 3 }
     val scope = rememberCoroutineScope()
-    val openRecent by container.openRecentRequests.collectAsStateWithLifecycle()
+    val openPage by container.openDropletsPageRequests.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) { vm.onAppear() }
-    LaunchedEffect(openRecent) {
-        if (openRecent) {
-            pagerState.scrollToPage(2)
-            container.openRecentRequests.value = false
+    LaunchedEffect(openPage) {
+        openPage?.let {
+            pagerState.scrollToPage(it.coerceIn(0, 2))
+            container.openDropletsPageRequests.value = null
         }
     }
 
@@ -128,17 +154,17 @@ fun DropletsScreen(onOpenInfo: () -> Unit, onOpenAuthor: (String) -> Unit) {
     Column(Modifier.fillMaxSize()) {
         HeaderBar("Droplets", onOpenInfo, subtitle = today)
         PaletteSegmentedControl(
-            labels = listOf("Feed", "Saved", "Recent"),
+            labels = listOf("Feed", "Saved", "Custom"),
             selectedIndex = pagerState.currentPage,
             onSelect = { scope.launch { pagerState.animateScrollToPage(it) } },
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
-        // Swipe between Feed, Saved and Recent, like the iOS swipe gesture
+        // Swipe between Feed, Saved and Custom, like the iOS swipe gesture
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
             when (page) {
                 0 -> FeedPage(vm, onOpenAuthor)
                 1 -> SavedPage(vm, onOpenAuthor)
-                else -> RecentPage(vm, onOpenAuthor)
+                else -> CustomPage()
             }
         }
     }
@@ -218,39 +244,158 @@ private fun SavedPage(vm: DropletsViewModel, onOpenAuthor: (String) -> Unit) {
     }
 }
 
+/** The user's own quotes: add, edit and delete them, and show them in the widget and notifications. */
 @Composable
-private fun RecentPage(vm: DropletsViewModel, onOpenAuthor: (String) -> Unit) {
+private fun CustomPage() {
     val container = LocalAppContainer.current
+    val context = LocalContext.current
     val palette = LocalPalette.current
-    val recents by container.localQuotes.recents.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) { vm.refreshCounts(recents) }
+    val customs by container.localQuotes.customs.collectAsStateWithLifecycle()
+    val category by container.settings.quoteCategory.collectAsStateWithLifecycle()
+    // Newest first, so a quote you just added shows at the top
+    val quotes = remember(customs) { customs.asReversed() }
+    var editor by remember { mutableStateOf<CustomEditorTarget?>(null) }
+    var toDelete by remember { mutableStateOf<Quote?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (recents.isEmpty()) {
-            item {
-                EmptyState(
-                    Icons.Filled.History,
-                    "No recent quotes yet",
-                    "Quotes from your notifications and your home screen widget will be listed here.",
-                )
+        item(key = "header") {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ActionButton("Add a Quote", Icons.Filled.Add, onClick = { editor = CustomEditorTarget(null) }, modifier = Modifier.fillMaxWidth())
+                if (quotes.isNotEmpty()) {
+                    if (category == QuoteCategory.Custom) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = palette.accent, modifier = Modifier.size(16.dp))
+                            Text(
+                                "Your widget and notifications show these quotes.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = palette.secondaryText,
+                            )
+                        }
+                    } else {
+                        ActionButton(
+                            "Show These in My Widget",
+                            Icons.Outlined.Widgets,
+                            primary = false,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                container.settings.setQuoteCategory(QuoteCategory.Custom)
+                                WidgetSync.onCategoryChanged(context)
+                            },
+                        )
+                    }
+                }
             }
-        } else {
-            item {
-                Text(
-                    "Your most recent quotes from notifications and your widget.",
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = palette.secondaryText,
-                    textAlign = TextAlign.Center,
+        }
+        if (quotes.isEmpty()) {
+            item(key = "empty") {
+                EmptyState(
+                    Icons.Outlined.FormatQuote,
+                    "Your own quotes",
+                    "Add quotes you wrote, heard from someone, or can't find in the app. They stay on this device, and your widget and notifications can show them.",
+                    modifier = Modifier.padding(top = 0.dp),
                 )
             }
         }
-        items(recents, key = { it.id }) { quote ->
-            QuoteCard(quote, onAuthorClick = onOpenAuthor)
+        items(quotes, key = { it.id }) { quote ->
+            QuoteCard(
+                quote,
+                onEdit = { editor = CustomEditorTarget(quote) },
+                onDelete = { toDelete = quote },
+            )
+        }
+    }
+
+    editor?.let { target ->
+        CustomQuoteSheet(
+            editing = target.quote,
+            onDismiss = { editor = null },
+            onSave = { text, author ->
+                container.saveCustomQuote(text, author, target.quote)
+                editor = null
+            },
+        )
+    }
+    toDelete?.let { quote ->
+        AlertDialog(
+            onDismissRequest = { toDelete = null },
+            title = { Text("Delete this quote?") },
+            text = { Text("It's only stored on this device, so it can't be recovered.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    container.deleteCustomQuote(quote)
+                    toDelete = null
+                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Cancel") } },
+        )
+    }
+}
+
+/** Which quote the editor is open for (null quote = adding a new one). */
+private data class CustomEditorTarget(val quote: Quote?)
+
+private const val CUSTOM_MAX_LENGTH = 500
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomQuoteSheet(editing: Quote?, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+    val palette = LocalPalette.current
+    var text by rememberSaveable { mutableStateOf(editing?.text.orEmpty()) }
+    var author by rememberSaveable { mutableStateOf(editing?.author.orEmpty()) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = palette.background,
+        contentColor = palette.text,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                if (editing == null) "New Quote" else "Edit Quote",
+                fontFamily = QuoteSerif,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = palette.text,
+            )
+            Text(
+                "Only stored on this device. Short quotes fit the widget best.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = palette.secondaryText,
+            )
+            PaletteTextField(text, { text = it.take(CUSTOM_MAX_LENGTH) }, "Quote text", minLines = 3)
+            PaletteTextField(author, { author = it }, "Author (optional)")
+            Spacer(Modifier.height(4.dp))
+            Button(
+                onClick = { onSave(text, author) },
+                enabled = text.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = palette.accent,
+                    contentColor = palette.onAccent,
+                    disabledContainerColor = palette.accent.copy(alpha = 0.35f),
+                    disabledContentColor = palette.onAccent.copy(alpha = 0.7f),
+                ),
+            ) {
+                Text(if (editing == null) "Add Quote" else "Save Changes", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

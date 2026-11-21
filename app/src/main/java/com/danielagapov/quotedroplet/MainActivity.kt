@@ -69,9 +69,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
-        if (intent?.getBooleanExtra(EXTRA_OPEN_RECENT, false) == true) {
-            appContainer.openRecentRequests.value = true
-            intent.removeExtra(EXTRA_OPEN_RECENT)
+        if (intent?.hasExtra(EXTRA_DROPLETS_PAGE) == true) {
+            appContainer.openDropletsPageRequests.value = intent.getIntExtra(EXTRA_DROPLETS_PAGE, 0)
+            intent.removeExtra(EXTRA_DROPLETS_PAGE)
         }
     }
 
@@ -92,6 +92,6 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        const val EXTRA_OPEN_RECENT = "open_recent"
+        const val EXTRA_DROPLETS_PAGE = "droplets_page"
     }
 }

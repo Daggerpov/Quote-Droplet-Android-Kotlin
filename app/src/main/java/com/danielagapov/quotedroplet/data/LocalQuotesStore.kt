@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
-/** Liked, saved (bookmarked) and recent quotes, kept on the device like the iOS app's UserDefaults. */
+/** Liked, saved (bookmarked) and custom quotes, kept on the device like the iOS app's UserDefaults. */
 class LocalQuotesStore(context: Context, private val json: Json) {
     private val prefs = context.getSharedPreferences("local_quotes", Context.MODE_PRIVATE)
     private val serializer = ListSerializer(Quote.serializer())
@@ -23,9 +23,9 @@ class LocalQuotesStore(context: Context, private val json: Json) {
     private val _bookmarkIds = MutableStateFlow(_bookmarks.value.ids())
     val bookmarkIds: StateFlow<Set<Int>> = _bookmarkIds.asStateFlow()
 
-    private val _recents = MutableStateFlow(read(KEY_RECENTS))
-    /** Quotes from notifications and the widget, newest first. */
-    val recents: StateFlow<List<Quote>> = _recents.asStateFlow()
+    private val _customs = MutableStateFlow(read(KEY_CUSTOM))
+    /** The user's own quotes from Droplets → Custom, oldest first. */
+    val customs: StateFlow<List<Quote>> = _customs.asStateFlow()
 
     /** Called after any change, so the home screen widget can redraw its heart. */
     var onChanged: (() -> Unit)? = null
@@ -52,11 +52,20 @@ class LocalQuotesStore(context: Context, private val json: Json) {
         onChanged?.invoke()
     }
 
+    /** Adds a custom quote, or replaces the one with the same ID (an edit). */
     @Synchronized
-    fun addRecent(quote: Quote) {
-        val list = (listOf(quote) + _recents.value.filterNot { it.id == quote.id }).take(MAX_RECENTS)
-        write(KEY_RECENTS, list)
-        _recents.value = list
+    fun saveCustom(quote: Quote) {
+        val current = _customs.value
+        val list = if (current.any { it.id == quote.id }) current.map { if (it.id == quote.id) quote else it } else current + quote
+        write(KEY_CUSTOM, list)
+        _customs.value = list
+    }
+
+    @Synchronized
+    fun deleteCustom(quote: Quote) {
+        val list = _customs.value.filterNot { it.id == quote.id }
+        write(KEY_CUSTOM, list)
+        _customs.value = list
     }
 
     private fun List<Quote>.ids(): Set<Int> = mapTo(HashSet()) { it.id }
@@ -71,7 +80,6 @@ class LocalQuotesStore(context: Context, private val json: Json) {
     private companion object {
         const val KEY_LIKED = "liked_quotes"
         const val KEY_BOOKMARKS = "bookmarked_quotes"
-        const val KEY_RECENTS = "recent_quotes"
-        const val MAX_RECENTS = 50
+        const val KEY_CUSTOM = "custom_quotes"
     }
 }

@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.danielagapov.quotedroplet.ui.theme.LocalPalette
@@ -21,7 +22,12 @@ import com.danielagapov.quotedroplet.ui.theme.LocalPalette
  * outside the full quote card, so every author in the app leads to their quotes.
  */
 @Composable
-fun AuthorLink(author: String, onOpenAuthor: (String) -> Unit, modifier: Modifier = Modifier) {
+fun AuthorLink(
+    author: String,
+    onOpenAuthor: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.End,
+) {
     val palette = LocalPalette.current
     Row(
         modifier.clickable(onClickLabel = "More quotes by ${author.trim()}") { onOpenAuthor(author) },
@@ -32,8 +38,10 @@ fun AuthorLink(author: String, onOpenAuthor: (String) -> Unit, modifier: Modifie
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             color = palette.accent,
-            maxLines = 1,
+            // Long attributions ("Lord Krishna, Bhagavad Gita") wrap instead of being cut off
+            maxLines = 3,
             overflow = TextOverflow.Ellipsis,
+            textAlign = textAlign,
             modifier = Modifier.weight(1f, fill = false),
         )
         Icon(

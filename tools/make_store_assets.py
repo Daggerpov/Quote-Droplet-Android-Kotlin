@@ -27,6 +27,7 @@ SERIF_BOLD = os.path.join(FONTS, "NotoSerif-Bold.ttf")
 SCREENS = [
     ("s5_widget.png", "A fresh quote on\nyour home screen", "#1E1D2A", "#F4F2F8"),  # Ember
     ("s1_feed.png", "Scroll, save and\nshare quotes", "#3A2C24", "#F7EEDD"),  # Espresso
+    ("s8_custom.png", "Add the quotes\nthat matter to you", "#E6ECE2", "#1E2B22"),  # Sage
     ("s4_appearance.png", "Eight palettes,\nor your own colors", "#3A2C24", "#F7EEDD"),  # Espresso
     ("s2_search.png", "Search by quote\nor author", "#0C1A2E", "#F1E4CE"),  # Midnight
     ("s3_top.png", "The community's\nfavourite quotes", "#DCEEF8", "#0F2536"),  # Sky

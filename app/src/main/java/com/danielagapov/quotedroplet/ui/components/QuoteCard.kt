@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,6 +70,9 @@ fun QuoteCard(
     modifier: Modifier = Modifier,
     highlight: String = "",
     onAuthorClick: ((String) -> Unit)? = null,
+    // Custom quotes show edit and delete in place of like and save
+    onEdit: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
 ) {
     val container = LocalAppContainer.current
     val palette = LocalPalette.current
@@ -85,6 +90,8 @@ fun QuoteCard(
         label = "heart",
     )
     val highlightColor = palette.accent.copy(alpha = 0.3f)
+    // Custom quotes' authors have no author page
+    val authorClick = if (quote.isCustom) null else onAuthorClick
 
     PaletteCard(modifier, padding = 20.dp) {
         Icon(
@@ -116,7 +123,9 @@ fun QuoteCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
-                    Modifier.then(if (onAuthorClick != null) Modifier.clickable { onAuthorClick(author) } else Modifier),
+                    Modifier
+                        .weight(1f, fill = false)
+                        .then(if (authorClick != null) Modifier.clickable { authorClick(author) } else Modifier),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -124,9 +133,12 @@ fun QuoteCard(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = palette.accent,
-                        maxLines = 1,
+                        // Long attributions wrap instead of being cut off
+                        maxLines = 3,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
-                    if (onAuthorClick != null) {
+                    if (authorClick != null) {
                         Icon(
                             Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = null,
@@ -142,31 +154,44 @@ fun QuoteCard(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                container.toggleLike(quote)
-            }) {
-                Icon(
-                    imageVector = if (liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = if (liked) "Unlike" else "Like",
-                    tint = if (liked) palette.accent else palette.secondaryText,
-                    modifier = Modifier.size(22.dp).scale(heartScale),
+            if (quote.isCustom) {
+                if (onEdit != null) {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Outlined.Edit, contentDescription = "Edit", tint = palette.secondaryText, modifier = Modifier.size(21.dp))
+                    }
+                }
+                if (onDelete != null) {
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = palette.secondaryText, modifier = Modifier.size(21.dp))
+                    }
+                }
+            } else {
+                IconButton(onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    container.toggleLike(quote)
+                }) {
+                    Icon(
+                        imageVector = if (liked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = if (liked) "Unlike" else "Like",
+                        tint = if (liked) palette.accent else palette.secondaryText,
+                        modifier = Modifier.size(22.dp).scale(heartScale),
+                    )
+                }
+                Text(
+                    "$likes",
+                    color = if (liked) palette.accent else palette.secondaryText,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.offset(x = (-6).dp),
                 )
-            }
-            Text(
-                "$likes",
-                color = if (liked) palette.accent else palette.secondaryText,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.offset(x = (-6).dp),
-            )
-            IconButton(onClick = { container.toggleBookmark(quote) }) {
-                Icon(
-                    imageVector = if (bookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                    contentDescription = if (bookmarked) "Remove from saved" else "Save",
-                    tint = if (bookmarked) palette.accent else palette.secondaryText,
-                    modifier = Modifier.size(22.dp),
-                )
+                IconButton(onClick = { container.toggleBookmark(quote) }) {
+                    Icon(
+                        imageVector = if (bookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                        contentDescription = if (bookmarked) "Remove from saved" else "Save",
+                        tint = if (bookmarked) palette.accent else palette.secondaryText,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
             }
             IconButton(onClick = {
                 copyQuote(context, quote)

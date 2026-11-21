@@ -115,7 +115,8 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
                 async { category to container.repository.count(category) }
             }.awaitAll()
             _counts.value = remote.mapNotNull { (c, n) -> n?.let { c to it } }.toMap() +
-                (QuoteCategory.Saved to container.localQuotes.bookmarks.value.size)
+                (QuoteCategory.Saved to container.localQuotes.bookmarks.value.size) +
+                (QuoteCategory.Custom to container.localQuotes.customs.value.size)
         }
     }
 }
@@ -404,7 +405,8 @@ private fun QuotesPage() {
             color = palette.secondaryText,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         )
-
+        // Same gap above this section as between the other settings sections
+        Spacer(Modifier.height(10.dp))
         SectionLabel("Notifications")
         PaletteCard {
             Row(verticalAlignment = Alignment.CenterVertically) {

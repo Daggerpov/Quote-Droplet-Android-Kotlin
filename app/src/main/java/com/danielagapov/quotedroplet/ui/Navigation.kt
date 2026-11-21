@@ -103,9 +103,9 @@ private fun HomeScreen(
     val container = LocalAppContainer.current
     val palette = LocalPalette.current
     var tab by rememberSaveable { mutableStateOf(HomeTab.Droplets) }
-    val openRecent by container.openRecentRequests.collectAsStateWithLifecycle()
-    LaunchedEffect(openRecent) {
-        if (openRecent) tab = HomeTab.Droplets
+    val openDropletsPage by container.openDropletsPageRequests.collectAsStateWithLifecycle()
+    LaunchedEffect(openDropletsPage) {
+        if (openDropletsPage != null) tab = HomeTab.Droplets
     }
     val tabStates = rememberSaveableStateHolder()
 

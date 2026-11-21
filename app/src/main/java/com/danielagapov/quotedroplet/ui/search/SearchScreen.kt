@@ -107,9 +107,10 @@ class SearchViewModel(private val container: AppContainer) : ViewModel() {
             return
         }
         _state.value = _state.value.copy(loading = true, failed = false)
-        if (category == QuoteCategory.Saved) {
-            // Saved quotes live on the device, so search them locally
-            _state.value = SearchState(results = container.localQuotes.bookmarks.value.asReversed().filter { matches(it, q) })
+        if (category.isOnDevice) {
+            // Saved and Custom quotes live on the device, so search them locally
+            val local = if (category == QuoteCategory.Custom) container.localQuotes.customs.value else container.localQuotes.bookmarks.value
+            _state.value = SearchState(results = local.asReversed().filter { matches(it, q) })
             return
         }
         container.repository.search(q, category)
