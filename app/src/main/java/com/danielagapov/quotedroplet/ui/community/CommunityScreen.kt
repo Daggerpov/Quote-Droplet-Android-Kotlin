@@ -1,5 +1,6 @@
 package com.danielagapov.quotedroplet.ui.community
 
+import com.danielagapov.quotedroplet.ui.components.AuthorLink
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -76,7 +77,7 @@ private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate
 fun formatDate(instant: Instant): String = dateFormatter.format(instant.atZone(ZoneId.systemDefault()))
 
 @Composable
-fun CommunityScreen(onOpenInfo: () -> Unit, onOpenSubmissions: () -> Unit) {
+fun CommunityScreen(onOpenInfo: () -> Unit, onOpenSubmissions: () -> Unit, onOpenAuthor: (String) -> Unit) {
     val container = LocalAppContainer.current
     val vm: CommunityViewModel = viewModel { CommunityViewModel(container) }
     val newest by vm.newest.collectAsStateWithLifecycle()
@@ -94,7 +95,7 @@ fun CommunityScreen(onOpenInfo: () -> Unit, onOpenSubmissions: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             SubmitCallout(onOpenSubmissions)
-            NewestQuotes(newest, failed)
+            NewestQuotes(newest, failed, onOpenAuthor)
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -119,7 +120,7 @@ private fun SubmitCallout(onOpenSubmissions: () -> Unit) {
 }
 
 @Composable
-private fun NewestQuotes(quotes: List<Quote>, failed: Boolean) {
+private fun NewestQuotes(quotes: List<Quote>, failed: Boolean, onOpenAuthor: (String) -> Unit) {
     val palette = LocalPalette.current
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         SectionLabel("Newest quotes")
@@ -152,15 +153,7 @@ private fun NewestQuotes(quotes: List<Quote>, failed: Boolean) {
                         }
                         Spacer(Modifier.weight(1f))
                         if (isAuthorValid(quote.author)) {
-                            Text(
-                                "— ${quote.author.orEmpty().trim()}",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = palette.accent,
-                                textAlign = TextAlign.End,
-                                maxLines = 1,
-                                modifier = Modifier.padding(start = 12.dp),
-                            )
+                            AuthorLink(quote.author.orEmpty(), onOpenAuthor, Modifier.padding(start = 12.dp))
                         }
                     }
                 }

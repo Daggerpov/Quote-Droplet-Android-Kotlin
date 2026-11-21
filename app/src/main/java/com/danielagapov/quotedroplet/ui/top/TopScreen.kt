@@ -1,5 +1,6 @@
 package com.danielagapov.quotedroplet.ui.top
 
+import com.danielagapov.quotedroplet.ui.components.AuthorLink
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
@@ -156,14 +157,9 @@ private fun LeaderboardRow(rank: Int, quote: Quote, onOpenAuthor: (String) -> Un
                 Text(quote.text, fontFamily = QuoteSerif, fontSize = 17.sp, lineHeight = 24.sp, color = palette.text)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (isAuthorValid(quote.author)) {
-                        Text(
-                            "— ${quote.author.orEmpty().trim()}",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = palette.accent,
-                            maxLines = 1,
-                            modifier = Modifier.weight(1f).clickable { onOpenAuthor(quote.author.orEmpty()) },
-                        )
+                        Box(Modifier.weight(1f)) {
+                            AuthorLink(quote.author.orEmpty(), onOpenAuthor)
+                        }
                     } else {
                         Spacer(Modifier.weight(1f))
                     }

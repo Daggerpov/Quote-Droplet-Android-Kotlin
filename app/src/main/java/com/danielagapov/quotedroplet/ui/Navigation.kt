@@ -71,7 +71,12 @@ fun QuoteDropletNavHost() {
             )
         }
         composable("info") { InfoScreen(onBack = { nav.navigateUp() }) }
-        composable("submissions") { SubmissionsScreen(onBack = { nav.navigateUp() }) }
+        composable("submissions") {
+            SubmissionsScreen(
+                onBack = { nav.navigateUp() },
+                onOpenAuthor = { author -> nav.navigate("author/${Uri.encode(author)}") },
+            )
+        }
         composable(
             route = "author/{name}",
             arguments = listOf(navArgument("name") { type = NavType.StringType }),
@@ -133,7 +138,7 @@ private fun HomeScreen(
                         HomeTab.Droplets -> DropletsScreen(onOpenInfo = onOpenInfo, onOpenAuthor = onOpenAuthor)
                         HomeTab.Search -> SearchScreen(onOpenInfo = onOpenInfo, onOpenAuthor = onOpenAuthor)
                         HomeTab.Top -> TopScreen(onOpenInfo = onOpenInfo, onOpenAuthor = onOpenAuthor)
-                        HomeTab.Community -> CommunityScreen(onOpenInfo = onOpenInfo, onOpenSubmissions = onOpenSubmissions)
+                        HomeTab.Community -> CommunityScreen(onOpenInfo = onOpenInfo, onOpenSubmissions = onOpenSubmissions, onOpenAuthor = onOpenAuthor)
                         HomeTab.Settings -> SettingsScreen(onOpenInfo = onOpenInfo)
                     }
                 }

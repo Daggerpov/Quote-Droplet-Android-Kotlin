@@ -1,5 +1,6 @@
 package com.danielagapov.quotedroplet.ui.community
 
+import com.danielagapov.quotedroplet.ui.components.AuthorLink
 import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.sp
@@ -80,7 +81,7 @@ class SubmissionsViewModel(private val container: AppContainer) : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SubmissionsScreen(onBack: () -> Unit) {
+fun SubmissionsScreen(onBack: () -> Unit, onOpenAuthor: (String) -> Unit) {
     val container = LocalAppContainer.current
     val vm: SubmissionsViewModel = viewModel { SubmissionsViewModel(container) }
     val submissions by vm.submissions.collectAsStateWithLifecycle()
@@ -121,7 +122,7 @@ fun SubmissionsScreen(onBack: () -> Unit) {
                             }
                             submissions.forEachIndexed { index, submission ->
                                 if (index > 0) HorizontalDivider(Modifier.padding(vertical = 12.dp), color = palette.hairline)
-                                SubmissionRow(submission)
+                                SubmissionRow(submission, onOpenAuthor)
                             }
                         }
                     }
@@ -132,19 +133,14 @@ fun SubmissionsScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun SubmissionRow(submission: Submission) {
+private fun SubmissionRow(submission: Submission, onOpenAuthor: (String) -> Unit) {
     val palette = LocalPalette.current
     Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Text(submission.text, fontFamily = QuoteSerif, fontSize = 17.sp, lineHeight = 24.sp, color = palette.text)
         if (isAuthorValid(submission.author)) {
-            Text(
-                "— ${submission.author.orEmpty().trim()}",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = palette.accent,
-                textAlign = TextAlign.End,
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-            )
+            Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) {
+                AuthorLink(submission.author.orEmpty(), onOpenAuthor)
+            }
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             StatusBadge(submission.submissionStatus)
