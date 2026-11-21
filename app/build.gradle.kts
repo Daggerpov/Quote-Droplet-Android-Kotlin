@@ -21,8 +21,8 @@ android {
         applicationId = "com.danielagapov.quotedroplet"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
 
         // Same production backend as the iOS app (Daggerpov/Quote-Dropper on Railway)
         buildConfigField("String", "API_BASE_URL", "\"https://quote-dropper-production.up.railway.app/\"")
